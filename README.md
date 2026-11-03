@@ -1,51 +1,122 @@
 # Wolfsports
 
-Wolfsports is a focused, responsive sports web client powered by the FRAMEX API. It presents football and basketball highlights, full replays, fixtures, and FRAMEX proxy playback in a clean open-source interface.
+**An open-source sports streaming web client powered by the FRAMEX API.**
 
-This repository is a standalone consumer application. It is intentionally separate from the private `Framex-Stream` repository and does not copy, modify, deploy, or depend on its source.
+Wolfsports is a modern, responsive sports platform for exploring football and basketball highlights, full-match replays, fixtures, and match updates.
+
+Built with a clean interface and powered by **FRAMEX**, Wolfsports demonstrates how developers can build sports applications using the FRAMEX API without managing their own sports database or scraping infrastructure.
+
+### Live Platform
+
+- **Live Demo:** https://wolfsports.onrender.com/
+- **Powered by FRAMEX:** https://framex.wolvarex.com/
+- **Developer Documentation:** https://wolfsports.onrender.com/docs
+
+---
 
 ## Features
 
-- Football and basketball aggregate feeds.
-- Highlight, full-replay, and latest-match views.
-- Responsive two-column video cards on phone screens.
-- FRAMEX proxy playback with MP4 range support and HLS support through `hls.js`.
-- Clear loading, empty, API-error, expired-stream, and upcoming-match states.
-- Public developer documentation at `/docs`.
-- Domain-restricted FRAMEX API-key usage through the `X-API-Key` header.
-- SEO metadata, crawlable route manifest, robots policy, and sitemap.
+- Football and basketball content feeds.
+- Match highlights and full-match replays.
+- Latest matches, fixtures, and match statuses.
+- Responsive design optimized for desktop and mobile.
+- Two-column video cards on mobile screens.
+- MP4 and HLS video playback.
+- Secure playback through FRAMEX proxy URLs.
+- Automatic recovery from expired stream links.
+- Loading, empty, error, and upcoming-match states.
+- Built-in developer documentation.
+- Domain-restricted FRAMEX API authentication.
+- SEO metadata, sitemap, and crawlable routes.
 
-## How the data flows
+## Powered by FRAMEX API
 
-Wolfsports does not scrape sports providers and does not contain a separate sports database. The browser requests the FRAMEX aggregate endpoint:
+Wolfsports uses the **FRAMEX API** as its primary source for sports content.
+
+**API Platform:** https://framex.wolvarex.com/
+
+FRAMEX handles sports data aggregation and provides the information needed to display highlights, replays, and match records.
+
+Wolfsports acts as the frontend application, transforming the API responses into an accessible sports viewing experience.
+
+### How It Works
 
 ```text
+FRAMEX API
+    |
+    | Sports Aggregate Endpoints
+    |
+    v
+Wolfsports Web Client
+    |
+    |-- Football
+    |-- Basketball
+    |-- Highlights
+    |-- Full Replays
+    |-- Latest Matches
+    |
+    v
+FRAMEX Proxy Playback
+    |
+    v
+Video Player (MP4 / HLS)
+```
+
+Wolfsports does not maintain a separate sports database or scrape external sports providers.
+
+### API Endpoints
+
+Football:
+
+```http
 GET https://framex.wolvarex.com/api/v1/sports/aggregate?sportType=football
+```
+
+Basketball:
+
+```http
 GET https://framex.wolvarex.com/api/v1/sports/aggregate?sportType=basketball
 ```
 
-Each request sends the configured key as `X-API-Key`. The interface reads these response fields:
+Requests use the `X-API-Key` header.
 
-- `data.highlightList` — short-form or featured sports videos.
-- `data.replayList` — full-match replays.
-- `data.latestMatchList` — fixtures and match status records.
+The application consumes three primary response fields:
 
-For playback, Wolfsports prefers the `proxyUrl` returned by FRAMEX and falls back to `streamUrl` when necessary. Signed proxy URLs can expire, so the client requests a fresh aggregate response when a link becomes invalid.
+| Field | Description |
+|---|---|
+| `data.highlightList` | Sports highlights and featured videos |
+| `data.replayList` | Full-match replays |
+| `data.latestMatchList` | Fixtures and match status information |
 
-## Local development
+## Getting Started
 
-Requirements: Node.js 18 or newer and pnpm.
+### Requirements
+
+- Node.js 18+
+- pnpm
+- FRAMEX API key
+
+### Installation
+
+Clone the repository and install dependencies.
 
 ```bash
+git clone <your-repository-url>
+cd wolfsports
 pnpm install
+```
+
+Create your local environment configuration:
+
+```bash
 cp .env.example .env.local
 ```
 
-Set the browser-safe configuration in `.env.local`:
+Add your FRAMEX API configuration:
 
 ```dotenv
 VITE_FRAMEX_API_BASE_URL=https://framex.wolvarex.com/api/v1
-VITE_FRAMEX_API_KEY=fxk_live_your_domain_restricted_key
+VITE_FRAMEX_API_KEY=your_domain_restricted_api_key
 ```
 
 Start the development server:
@@ -54,65 +125,104 @@ Start the development server:
 pnpm dev
 ```
 
-The Vite server listens on port `3000` by default. Open `/` for the feed or `/docs` for the developer guide.
+The application runs on:
 
-### Local FRAMEX API testing
+```text
+http://localhost:3000
+```
 
-When testing against a FRAMEX API running on the same Manus sandbox, use:
+Developer documentation is available at `/docs`.
+
+## FRAMEX API Authentication
+
+Wolfsports uses domain-restricted API keys to access FRAMEX.
+
+Because Wolfsports is a browser-based application, its `VITE_` configuration values are included in the frontend bundle.
+
+**Important:** Only use a browser-safe, domain-restricted API key. Never expose administrator credentials or unrestricted API keys.
+
+For the live Render deployment:
+
+```text
+https://wolfsports.onrender.com
+```
+
+Configure your FRAMEX key to permit the appropriate Render domain according to the FRAMEX domain restriction policy.
+
+Development domains such as localhost should be authorized separately when needed.
+
+Do not commit production credentials, local environment files, signed stream URLs, or API response dumps.
+
+## Video Playback
+
+Wolfsports supports two primary playback formats:
+
+- **MP4:** Standard browser video playback, including HTTP range requests.
+- **HLS:** Adaptive streaming through `hls.js`.
+
+The player prioritizes the `proxyUrl` supplied by FRAMEX and falls back to `streamUrl` when necessary.
+
+FRAMEX proxy URLs may be signed and time-limited.
+
+When a stream expires, Wolfsports can request fresh aggregate data to obtain an updated playback URL.
+
+Matches without playable streams are displayed as upcoming rather than presenting broken playback links.
+
+## Local FRAMEX API Testing
+
+When running a local FRAMEX API instance alongside Wolfsports, configure:
 
 ```dotenv
 VITE_FRAMEX_API_BASE_URL=/framex-api
 ```
 
-The development Vite configuration proxies `/framex-api` to a local FRAMEX server on port `8080` and proxies `/api/v1` for local playback relay requests. This behavior is development-only. Production Wolfsports deployments should use the public FRAMEX URL.
+The Vite development server proxies `/framex-api` to the local FRAMEX server on port `8080`.
 
-## API-key security
+It also supports local playback relay requests through `/api/v1`.
 
-Wolfsports is a browser client, so a `VITE_` key is included in the browser bundle and must be treated as public application configuration. Do not use an administrator credential or an unrestricted key.
+These proxy settings are intended for development only.
 
-Create a FRAMEX key restricted to the root domain that serves Wolfsports. For example, a key intended for `sports.example.com` should allow `example.com` according to the FRAMEX domain policy. Add preview or localhost domains separately for development testing. FRAMEX validates the request origin and rejects keys used from unapproved domains.
+Production deployments should use the public FRAMEX API.
 
-Never commit `.env.local`, production keys, signed stream URLs, or copied response dumps. The repository ignores local environment files by default.
+## Production Deployment
 
-## Playback notes
+Wolfsports can be deployed to static hosting platforms that support Vite applications.
 
-The FRAMEX proxy is the playback boundary. Wolfsports does not expose the upstream provider URL as its primary player source. The player supports normal MP4 playback and HLS streams through `hls.js` when the URL ends in `.m3u8`.
-
-A signed URL may expire between listing and playback. The expected recovery is:
-
-1. Close or reload the failed player.
-2. Request the aggregate endpoint again.
-3. Use the newly returned `proxyUrl`.
-4. Respect HTTP range responses such as `206 Partial Content` for seeking and resume behavior.
-
-A match without a playable URL is presented as **Upcoming**, not as a broken provider link.
-
-## Production build
+Build the application:
 
 ```bash
 pnpm build
+```
+
+Preview the production build:
+
+```bash
 pnpm preview
 ```
 
-The build output is written to `dist/`. For a static host, serve `dist/` with SPA fallback enabled so `/docs` resolves to `index.html`. Keep `/manus-routes.json`, `robots.txt`, and `sitemap.xml` publicly readable.
+The compiled application is generated in the `dist/` directory.
 
-### Render static-site settings
+### Deploy on Render
 
-Create a Render **Static Site** from this repository with:
+The official live preview is hosted on Render:
 
-```text
-Build command: pnpm install --frozen-lockfile && pnpm build
-Publish directory: dist
-```
+**https://wolfsports.onrender.com/**
 
-Add these environment variables in Render, using a key restricted to the Render hostname:
+Create a new Render Static Site and configure:
 
-```text
+| Setting | Value |
+|---|---|
+| Build command | `pnpm install --frozen-lockfile && pnpm build` |
+| Publish directory | `dist` |
+
+Environment variables:
+
+```dotenv
 VITE_FRAMEX_API_BASE_URL=https://framex.wolvarex.com/api/v1
-VITE_FRAMEX_API_KEY=fxk_live_your_domain_restricted_key
+VITE_FRAMEX_API_KEY=your_domain_restricted_api_key
 ```
 
-Add a rewrite rule so the public docs route and any future client-side routes work on refresh:
+Configure the following rewrite rule:
 
 ```text
 Source: /*
@@ -120,27 +230,53 @@ Destination: /index.html
 Action: Rewrite
 ```
 
-## Project structure
+This ensures that client-side routes such as `/docs` continue working when accessed directly.
+
+Keep the sitemap, robots policy, and route manifest publicly accessible.
+
+## Project Structure
 
 ```text
-src/
-  App.tsx       Feed UI, docs route, card views, and player modal
-  api.ts        FRAMEX request client, response types, and URL/status helpers
-  styles.css    Responsive Wolfsports visual system
-public/
-  manus-routes.json
-  robots.txt
-  sitemap.xml
-index.html      Crawlable metadata shell
-.env.example    Safe configuration template
+wolfsports/
+├── src/
+│   ├── App.tsx
+│   ├── api.ts
+│   └── styles.css
+├── public/
+│   ├── manus-routes.json
+│   ├── robots.txt
+│   └── sitemap.xml
+├── index.html
+├── .env.example
+└── package.json
 ```
 
-## Useful routes
+### Important Routes
 
-- `/` — Wolfsports sports feed.
-- `/docs` — public FRAMEX integration documentation.
-- `/manus-routes.json` — crawlable route manifest.
+| Route | Description |
+|---|---|
+| `/` | Main sports feed |
+| `/docs` | Developer documentation |
+| `/manus-routes.json` | Public route manifest |
+| `/robots.txt` | Search crawler policy |
+| `/sitemap.xml` | Sitemap |
 
-## License and separation
+## Open Source
 
-Add the license that matches your intended open-source distribution before publishing the new repository. Wolfsports is an independent FRAMEX API consumer; keep it separate from `Framex-Stream` and do not copy private provider adapters or source code into this project.
+Wolfsports is designed as a standalone, open-source demonstration of what developers can build with the FRAMEX API.
+
+It is independent of the private `Framex-Stream` project and does not copy or depend on its source code.
+
+Developers can explore the application, customize the interface, and use it as a starting point for their own FRAMEX-powered sports experiences.
+
+A suitable open-source license should be added before public distribution.
+
+## Links
+
+- **Wolfsports Live Demo:** https://wolfsports.onrender.com/
+- **FRAMEX API Platform:** https://framex.wolvarex.com/
+- **Wolfsports Documentation:** https://wolfsports.onrender.com/docs
+
+---
+
+**Wolfsports — Sports powered by FRAMEX.**
